@@ -68,7 +68,7 @@ Clicar no ícone de reconciliar relê a quota real da conta e a pasta `StorageWa
 | :----------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------: |
 | ![Adicionar conta Google Drive](docs/screenshots/add-gdrive-modal.png)<br>_Client ID/secret ocultados neste print — o resto é a interface real_ | ![Pasta vazia](docs/screenshots/empty-folder.png)<br>_Explica o drag-drop e o import via reconciliação bem onde você precisaria disso_ |
 
-_A interface em si é em português — construí para meu próprio uso diário primeiro. Os screenshots e GIFs acima são do app de verdade, enviando arquivos reais (descartáveis, de conteúdo genérico) para minhas próprias contas conectadas, apagados logo depois de capturados._
+_A interface tem português e inglês, trocáveis ao vivo por um botão na sidebar — construí em português para meu próprio uso diário primeiro, e os screenshots acima usam o modo em português. Os screenshots e GIFs são do app de verdade, enviando arquivos reais (descartáveis, de conteúdo genérico) para minhas próprias contas conectadas, apagados logo depois de capturados._
 
 ---
 
@@ -124,6 +124,10 @@ Também é uma vitrine pequena e completa de um app Electron com cara de produç
 - As credenciais de cada conta são criptografadas em repouso via `safeStorage` do Electron (DPAPI do Windows por baixo) — o blob criptografado fica atrelado à sua conta do Windows e é inútil se copiado para outro lugar.
 - `contextIsolation` ligado, `nodeIntegration` desligado, e um `setWindowOpenHandler` que sempre manda links para o navegador de verdade em vez de abrir um popup dentro do app.
 - O motor central (`packages/core`) nunca importa Electron — o app injeta a cifra DPAPI, os testes injetam uma cifra em texto puro, então um futuro executor headless/CLI poderia injetar outra coisa completamente diferente sem tocar no código do motor.
+
+### Interface bilíngue
+- Português e inglês, trocáveis ao vivo pela sidebar, persistidos em `localStorage`. `en.ts` é checado em tempo de compilação contra `type Dict = typeof pt` (português como fonte da verdade), então o build quebra se faltar uma chave em qualquer um dos dois dicionários.
+- `packages/core` é agnóstico de UI por design e é anterior ao i18n, então ainda lança mensagens de erro fixas em português (~30 pontos diferentes). Em vez de refatorar cada um desses pontos para um contrato de códigos de erro, o renderer reconhece por regex o conjunto finito de mensagens conhecidas do core/providers na fronteira de apresentação e só traduz o que reconhece — qualquer coisa não reconhecida (um erro cru do `megajs`/`googleapis`, por exemplo) aparece exatamente como foi lançada, em vez de ser adivinhada.
 
 ---
 
@@ -250,8 +254,10 @@ storage-waiter/
 │       └── src/
 │           ├── main/               # janela, ponte IPC, SafeStorageCipher (DPAPI)
 │           ├── preload/            # contextBridge → window.core
-│           └── renderer/           # interface React + Zustand (pt-BR)
-│               └── src/components/ # Sidebar, FileGrid, TransferQueue, Modals
+│           └── renderer/           # interface React + Zustand (pt/en)
+│               └── src/
+│                   ├── i18n/        # pt.ts (fonte da verdade), en.ts (espelho checado)
+│                   └── components/  # Sidebar, FileGrid, TransferQueue, Modals
 │
 ├── docs/screenshots/                # tudo que está embutido neste README
 └── docs/social-preview.png

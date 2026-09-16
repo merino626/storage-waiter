@@ -46,29 +46,29 @@
 
 Three files dropped at once queue up and upload in parallel-looking order (one active transfer per account, so no two jobs fight over the same account's session or rate limit); each account's meter grows live as bytes land.
 
-![Upload flow](docs/screenshots/upload-flow.gif)
+![Upload flow](docs/screenshots/upload-flow-en.gif)
 
 ### Reconciling an account picks up what changed behind its back
 
 Clicking the reconcile icon re-reads the account's real quota and its `StorageWaiter/` cloud folder, live, while the job shows up in the same transfer queue as any upload or download.
 
-![Reconcile flow](docs/screenshots/reconcile-flow.gif)
+![Reconcile flow](docs/screenshots/reconcile-flow-en.gif)
 
 ### The app
 
 |                                          Main view                                          |                                        A file selected                                        |
 | :----------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------: |
-| ![Main view](docs/screenshots/main-view.png)<br>_Three real accounts (2 Mega, 1 Drive), each with a live free-space meter_ | ![File selected](docs/screenshots/file-selected.png)<br>_Contextual toolbar — download only appears for a ready file_ |
+| ![Main view](docs/screenshots/main-view-en.png)<br>_Three real accounts (2 Mega, 1 Drive), each with a live free-space meter_ | ![File selected](docs/screenshots/file-selected-en.png)<br>_Contextual toolbar — download only appears for a ready file_ |
 
 |                                          Adding a cloud account                                          |                                        Drag-and-drop                                        |
 | :----------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------: |
-| ![Add Mega account](docs/screenshots/add-mega-modal.png)<br>_Mega: just a nickname, e-mail and password_ | ![Drag and drop overlay](docs/screenshots/drag-drop-overlay.png)<br>_Drop anywhere in the window — it targets whichever folder is open_ |
+| ![Add Mega account](docs/screenshots/add-mega-modal-en.png)<br>_Mega: just a nickname, e-mail and password_ | ![Drag and drop overlay](docs/screenshots/drag-drop-overlay-en.png)<br>_Drop anywhere in the window — it targets whichever folder is open_ |
 
 |                                          Google Drive OAuth                                          |                                        Empty folder                                        |
 | :----------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------: |
-| ![Add Google Drive account](docs/screenshots/add-gdrive-modal.png)<br>_Client ID/secret redacted for this screenshot — everything else is real UI copy_ | ![Empty folder](docs/screenshots/empty-folder.png)<br>_Explains the drag-drop + reconcile-to-import behavior right where you'd need it_ |
+| ![Add Google Drive account](docs/screenshots/add-gdrive-modal-en.png)<br>_Client ID/secret redacted for this screenshot — everything else is real UI copy_ | ![Empty folder](docs/screenshots/empty-folder-en.png)<br>_Explains the drag-drop + reconcile-to-import behavior right where you'd need it_ |
 
-_The interface itself is in Brazilian Portuguese — I built it for my own daily use first. Screenshots and GIFs above are the real app, uploading real (throwaway, generic-content) files to my own connected accounts, then deleting them again once captured._
+_The interface ships in Portuguese and English, switchable from a toggle in the sidebar — I built it in Portuguese for my own daily use first, and these screenshots use the English mode. Screenshots and GIFs above are the real app, uploading real (throwaway, generic-content) files to my own connected accounts, then deleting them again once captured._
 
 ---
 
@@ -124,6 +124,10 @@ It's also a small, complete showcase of a production-shaped Electron app that ha
 - Every account's credentials are encrypted at rest via Electron's `safeStorage` (Windows DPAPI under the hood) — the encrypted blob is tied to your Windows user account and useless if copied elsewhere.
 - `contextIsolation` on, `nodeIntegration` off, and a `setWindowOpenHandler` that always routes links to your real browser instead of opening an in-app popup.
 - The core engine (`packages/core`) never imports Electron — the app injects the DPAPI cipher, tests inject a plaintext one, so a future headless/CLI runner could inject something else entirely without touching engine code.
+
+### Bilingual interface
+- Portuguese and English, switchable live from the sidebar, persisted to `localStorage`. `en.ts` is type-checked against `type Dict = typeof pt` (Portuguese as the source of truth), so the build fails if a key goes missing from either dictionary.
+- `packages/core` is UI-agnostic by design and predates i18n, so it still throws fixed Portuguese error strings. Rather than refactor every one of its ~30 throw sites into an error-code contract, the renderer pattern-matches the known, finite set of core/provider messages at the presentation boundary and translates only what it recognizes — anything unrecognized (a raw `megajs`/`googleapis` error, say) is shown exactly as thrown instead of being guessed at.
 
 ---
 
@@ -249,8 +253,10 @@ storage-waiter/
 │       └── src/
 │           ├── main/               # window, IPC bridge, SafeStorageCipher (DPAPI)
 │           ├── preload/            # contextBridge → window.core
-│           └── renderer/           # React + Zustand UI (pt-BR)
-│               └── src/components/ # Sidebar, FileGrid, TransferQueue, Modals
+│           └── renderer/           # React + Zustand UI (pt/en)
+│               └── src/
+│                   ├── i18n/        # pt.ts (source of truth), en.ts (type-checked mirror)
+│                   └── components/  # Sidebar, FileGrid, TransferQueue, Modals
 │
 ├── docs/screenshots/                # everything embedded above in this README
 └── docs/social-preview.png
