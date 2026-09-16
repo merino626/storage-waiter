@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import type { AccountInfo, JobInfo, NodeInfo } from '@storagewaiter/core';
 import { cleanError } from './util';
+import type { Lang } from './i18n/pt';
+import { loadStoredLang, persistLang } from './i18n';
+import { translateCoreError } from './i18n/translateCoreError';
 
 export interface Crumb {
   id: string;
@@ -15,6 +18,7 @@ interface AppState {
   selection: string[];
   error: string | null;
   notice: string | null;
+  lang: Lang;
 
   currentFolderId(): string;
   refreshAccounts(): Promise<void>;
@@ -27,6 +31,8 @@ interface AppState {
   setError(message: string | null): void;
   setNotice(message: string | null): void;
   applyJobUpdate(job: JobInfo): void;
+  setLang(lang: Lang): void;
+  describeError(err: unknown): string;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -37,6 +43,7 @@ export const useStore = create<AppState>((set, get) => ({
   selection: [],
   error: null,
   notice: null,
+  lang: loadStoredLang(),
 
   currentFolderId: () => {
     const path = get().path;
@@ -47,7 +54,7 @@ export const useStore = create<AppState>((set, get) => ({
     try {
       set({ accounts: await window.core.listAccounts() });
     } catch (err) {
-      set({ error: cleanError(err) });
+      set({ error: get().describeError(err) });
     }
   },
 
@@ -57,7 +64,7 @@ export const useStore = create<AppState>((set, get) => ({
       const alive = new Set(nodes.map((n) => n.id));
       set((s) => ({ nodes, selection: s.selection.filter((id) => alive.has(id)) }));
     } catch (err) {
-      set({ error: cleanError(err) });
+      set({ error: get().describeError(err) });
     }
   },
 
@@ -65,7 +72,7 @@ export const useStore = create<AppState>((set, get) => ({
     try {
       set({ jobs: await window.core.listJobs() });
     } catch (err) {
-      set({ error: cleanError(err) });
+      set({ error: get().describeError(err) });
     }
   },
 
@@ -98,4 +105,11 @@ export const useStore = create<AppState>((set, get) => ({
       const rest = s.jobs.filter((j) => j.id !== job.id);
       return { jobs: [job, ...rest].slice(0, 100) };
     }),
+
+  setLang: (lang) => {
+    persistLang(lang);
+    set({ lang });
+  },
+
+  describeError: (err) => translateCoreError(cleanError(err), get().lang),
 }));

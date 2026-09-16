@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { JobInfo } from '@storagewaiter/core';
 import { useStore } from '../store';
 import { formatBytes } from '../util';
+import { useT, useLang, type Dict } from '../i18n';
+import { translateCoreError } from '../i18n/translateCoreError';
 import {
   IconChevronDown,
   IconChevronUp,
@@ -12,12 +14,18 @@ import {
   IconX,
 } from './Icons';
 
-const TYPE_LABEL: Record<JobInfo['type'], string> = {
-  upload_part: 'Enviando',
-  download_part: 'Baixando',
-  delete_remote: 'Excluindo da nuvem',
-  reconcile_account: 'Reconciliando conta',
-};
+function typeLabel(t: Dict, type: JobInfo['type']): string {
+  switch (type) {
+    case 'upload_part':
+      return t.transfers.typeUpload;
+    case 'download_part':
+      return t.transfers.typeDownload;
+    case 'delete_remote':
+      return t.transfers.typeDelete;
+    case 'reconcile_account':
+      return t.transfers.typeReconcile;
+  }
+}
 
 function typeIcon(type: JobInfo['type']) {
   switch (type) {
@@ -38,6 +46,8 @@ function isVisible(job: JobInfo): boolean {
 }
 
 export function TransferQueue() {
+  const t = useT();
+  const lang = useLang();
   const jobs = useStore((s) => s.jobs).filter(isVisible);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -49,7 +59,7 @@ export function TransferQueue() {
         <span className="chev">
           {collapsed ? <IconChevronUp size={13} /> : <IconChevronDown size={13} />}
         </span>
-        <span>Transferências</span>
+        <span>{t.transfers.title}</span>
         <span className="transfers-count num">{jobs.length}</span>
       </button>
       {!collapsed && (
@@ -66,16 +76,18 @@ export function TransferQueue() {
                 <span className="transfer-icon">{typeIcon(job.type)}</span>
                 <div className="transfer-info">
                   <span className="transfer-name">
-                    {TYPE_LABEL[job.type]}
+                    {typeLabel(t, job.type)}
                     {job.nodeName ? ` — ${job.nodeName}` : ''}
                   </span>
                   {job.state === 'failed' && (
-                    <span className="transfer-detail">{job.lastError ?? 'Falhou'}</span>
+                    <span className="transfer-detail">
+                      {job.lastError ? translateCoreError(job.lastError, lang) : t.transfers.failedGeneric}
+                    </span>
                   )}
                 </div>
                 <span className="transfer-bytes num">
                   {job.state === 'queued'
-                    ? 'na fila'
+                    ? t.transfers.queuedBytes
                     : job.state === 'failed'
                       ? ''
                       : job.totalBytes > 0
@@ -86,7 +98,7 @@ export function TransferQueue() {
                   {job.state === 'failed' ? (
                     <button
                       className="icon-btn"
-                      title="Tentar de novo"
+                      title={t.transfers.retry}
                       onClick={() => void window.core.retryJob(job.id)}
                     >
                       <IconRefresh size={13} />
@@ -94,7 +106,7 @@ export function TransferQueue() {
                   ) : (
                     <button
                       className="icon-btn"
-                      title="Cancelar"
+                      title={t.transfers.cancel}
                       onClick={() => void window.core.cancelJob(job.id)}
                     >
                       <IconX size={13} />

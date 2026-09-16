@@ -1,14 +1,16 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { cleanError } from '../util';
+import { useStore } from '../store';
+import { useT, useLang } from '../i18n';
 import { IconX } from './Icons';
 
 export function ModalShell(props: { title: string; onClose: () => void; children: ReactNode }) {
+  const t = useT();
   return (
     <div className="modal-backdrop" onMouseDown={props.onClose}>
       <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
         <header>
           <h2>{props.title}</h2>
-          <button className="icon-btn" onClick={props.onClose} title="Fechar">
+          <button className="icon-btn" onClick={props.onClose} title={t.common.close}>
             <IconX size={14} />
           </button>
         </header>
@@ -26,6 +28,8 @@ export function TextPromptModal(props: {
   onSubmit: (value: string) => Promise<void>;
   onClose: () => void;
 }) {
+  const t = useT();
+  const describeError = useStore((s) => s.describeError);
   const [value, setValue] = useState(props.initial ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +43,7 @@ export function TextPromptModal(props: {
       await props.onSubmit(value.trim());
       props.onClose();
     } catch (err) {
-      setError(cleanError(err));
+      setError(describeError(err));
       setBusy(false);
     }
   };
@@ -54,10 +58,10 @@ export function TextPromptModal(props: {
         {error && <p className="form-error">{error}</p>}
         <footer>
           <button type="button" className="btn" onClick={props.onClose}>
-            Cancelar
+            {t.common.cancel}
           </button>
           <button type="submit" className="btn btn-primary" disabled={busy || !value.trim()}>
-            {busy ? 'Aguarde…' : props.submitLabel}
+            {busy ? t.common.wait : props.submitLabel}
           </button>
         </footer>
       </form>
@@ -66,6 +70,8 @@ export function TextPromptModal(props: {
 }
 
 export function AddMegaModal(props: { onClose: () => void; onAdded: () => void }) {
+  const t = useT();
+  const describeError = useStore((s) => s.describeError);
   const [label, setLabel] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -81,46 +87,43 @@ export function AddMegaModal(props: { onClose: () => void; onAdded: () => void }
       props.onAdded();
       props.onClose();
     } catch (err) {
-      setError(cleanError(err));
+      setError(describeError(err));
       setBusy(false);
     }
   };
 
   return (
-    <ModalShell title="Adicionar conta Mega" onClose={props.onClose}>
+    <ModalShell title={t.addMega.title} onClose={props.onClose}>
       <form onSubmit={submit}>
         <label>
-          Apelido da conta
+          {t.addMega.nicknameLabel}
           <input
             autoFocus
-            placeholder="ex.: mega-pessoal"
+            placeholder={t.addMega.nicknamePlaceholder}
             value={label}
             onChange={(e) => setLabel(e.target.value)}
           />
         </label>
         <label>
-          E-mail
+          {t.addMega.emailLabel}
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         </label>
         <label>
-          Senha
+          {t.addMega.passwordLabel}
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
         </label>
-        <p className="form-hint">
-          Suas credenciais ficam criptografadas no seu computador (DPAPI) e são usadas apenas para
-          falar direto com o Mega.
-        </p>
+        <p className="form-hint">{t.addMega.hint}</p>
         {error && <p className="form-error">{error}</p>}
         <footer>
           <button type="button" className="btn" onClick={props.onClose}>
-            Cancelar
+            {t.common.cancel}
           </button>
           <button
             type="submit"
             className="btn btn-primary"
             disabled={busy || !label.trim() || !email || !password}
           >
-            {busy ? 'Conectando…' : 'Conectar'}
+            {busy ? t.addMega.connecting : t.addMega.connect}
           </button>
         </footer>
       </form>
@@ -128,7 +131,46 @@ export function AddMegaModal(props: { onClose: () => void; onAdded: () => void }
   );
 }
 
+const GDRIVE_CREDENTIALS_URL = 'https://console.cloud.google.com/apis/credentials';
+
+/** Kept as JSX per language (not a flat dict string) because of the inline
+ *  link/bold/italic formatting mixed into the copy. */
+function GDriveHint({ lang }: { lang: 'pt' | 'en' }) {
+  if (lang === 'en') {
+    return (
+      <p className="form-hint">
+        One-time setup (works for every Google account you connect):{' '}
+        <a href={GDRIVE_CREDENTIALS_URL} target="_blank" rel="noreferrer">
+          console.cloud.google.com/apis/credentials
+        </a>
+        {' '}→ create a project → enable the <em>Google Drive API</em> → create an{' '}
+        <em>OAuth client ID</em> credential of type <strong>Desktop app</strong> and paste the ID
+        and secret here. When you connect, your browser opens for you to authorize the account.
+        The app requests Drive access so it can import files you drop into the{' '}
+        <em>StorageWaiter</em> folder from the website, but by code it only ever touches that
+        folder.
+      </p>
+    );
+  }
+  return (
+    <p className="form-hint">
+      Configuração única (vale para todas as suas contas Google):{' '}
+      <a href={GDRIVE_CREDENTIALS_URL} target="_blank" rel="noreferrer">
+        console.cloud.google.com/apis/credentials
+      </a>
+      {' '}→ crie um projeto → ative a <em>Google Drive API</em> → crie uma credencial{' '}
+      <em>OAuth client ID</em> do tipo <strong>Desktop app</strong> e cole o ID e o secret aqui.
+      Ao conectar, seu navegador abrirá para você autorizar a conta. O app pede acesso ao
+      Drive para conseguir importar arquivos que você colocar na pasta{' '}
+      <em>StorageWaiter</em> pelo site, mas por código só toca nessa pasta.
+    </p>
+  );
+}
+
 export function AddGDriveModal(props: { onClose: () => void; onAdded: () => void }) {
+  const t = useT();
+  const lang = useLang();
+  const describeError = useStore((s) => s.describeError);
   const [label, setLabel] = useState('');
   const [clientId, setClientId] = useState('');
   const [clientSecret, setClientSecret] = useState('');
@@ -149,53 +191,43 @@ export function AddGDriveModal(props: { onClose: () => void; onAdded: () => void
       props.onAdded();
       props.onClose();
     } catch (err) {
-      setError(cleanError(err));
+      setError(describeError(err));
       setBusy(false);
     }
   };
 
   return (
-    <ModalShell title="Adicionar conta Google Drive" onClose={props.onClose}>
+    <ModalShell title={t.addGDrive.title} onClose={props.onClose}>
       <form onSubmit={submit}>
         <label>
-          Apelido da conta
+          {t.addGDrive.nicknameLabel}
           <input
             autoFocus
-            placeholder="ex.: gdrive-dudu"
+            placeholder={t.addGDrive.nicknamePlaceholder}
             value={label}
             onChange={(e) => setLabel(e.target.value)}
           />
         </label>
         <label>
-          OAuth Client ID
+          {t.addGDrive.clientIdLabel}
           <input value={clientId} onChange={(e) => setClientId(e.target.value)} />
         </label>
         <label>
-          OAuth Client Secret
+          {t.addGDrive.clientSecretLabel}
           <input value={clientSecret} onChange={(e) => setClientSecret(e.target.value)} />
         </label>
-        <p className="form-hint">
-          Configuração única (vale para todas as suas contas Google):{' '}
-          <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer">
-            console.cloud.google.com/apis/credentials
-          </a>
-          {' '}→ crie um projeto → ative a <em>Google Drive API</em> → crie uma credencial{' '}
-          <em>OAuth client ID</em> do tipo <strong>Desktop app</strong> e cole o ID e o secret aqui.
-          Ao conectar, seu navegador abrirá para você autorizar a conta. O app pede acesso ao
-          Drive para conseguir importar arquivos que você colocar na pasta{' '}
-          <em>StorageWaiter</em> pelo site, mas por código só toca nessa pasta.
-        </p>
+        <GDriveHint lang={lang} />
         {error && <p className="form-error">{error}</p>}
         <footer>
           <button type="button" className="btn" onClick={props.onClose}>
-            Cancelar
+            {t.common.cancel}
           </button>
           <button
             type="submit"
             className="btn btn-primary"
             disabled={busy || !label.trim() || !clientId || !clientSecret}
           >
-            {busy ? 'Aguardando autorização no navegador…' : 'Conectar'}
+            {busy ? t.addGDrive.connecting : t.addGDrive.connect}
           </button>
         </footer>
       </form>

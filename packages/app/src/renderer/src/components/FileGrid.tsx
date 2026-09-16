@@ -1,6 +1,7 @@
 import type { NodeInfo } from '@storagewaiter/core';
 import { useStore } from '../store';
-import { cleanError, formatBytes } from '../util';
+import { formatBytes } from '../util';
+import { useT } from '../i18n';
 import {
   fileTypeIcon,
   IconAlert,
@@ -11,6 +12,7 @@ import {
 } from './Icons';
 
 function UploadStatus({ nodeId }: { nodeId: string }) {
+  const t = useT();
   const job = useStore((s) =>
     s.jobs.find(
       (j) => j.type === 'upload_part' && j.nodeId === nodeId && j.state !== 'done',
@@ -23,12 +25,13 @@ function UploadStatus({ nodeId }: { nodeId: string }) {
   return (
     <span className="file-cell-status">
       <IconSpinner size={12} />
-      <span className="num">{pct !== null ? `Enviando ${pct}%` : 'Na fila'}</span>
+      <span className="num">{pct !== null ? t.fileGrid.uploading(pct) : t.fileGrid.queued}</span>
     </span>
   );
 }
 
 function StatusCell({ node }: { node: NodeInfo }) {
+  const t = useT();
   switch (node.status) {
     case 'uploading':
       return <UploadStatus nodeId={node.id} />;
@@ -36,14 +39,14 @@ function StatusCell({ node }: { node: NodeInfo }) {
       return (
         <span className="file-cell-status danger">
           <IconAlert size={12} />
-          Falhou
+          {t.fileGrid.failed}
         </span>
       );
     case 'missing_remote':
       return (
         <span className="file-cell-status warn">
           <IconCloudOff size={12} />
-          Fora da nuvem
+          {t.fileGrid.missingRemote}
         </span>
       );
     default:
@@ -52,6 +55,7 @@ function StatusCell({ node }: { node: NodeInfo }) {
 }
 
 export function FileGrid() {
+  const t = useT();
   const nodes = useStore((s) => s.nodes);
   const selection = useStore((s) => s.selection);
   const toggleSelect = useStore((s) => s.toggleSelect);
@@ -59,6 +63,7 @@ export function FileGrid() {
   const enterFolder = useStore((s) => s.enterFolder);
   const setError = useStore((s) => s.setError);
   const setNotice = useStore((s) => s.setNotice);
+  const describeError = useStore((s) => s.describeError);
 
   const open = async (node: NodeInfo) => {
     if (node.kind === 'folder') {
@@ -67,9 +72,9 @@ export function FileGrid() {
     }
     try {
       const result = await window.core.openNode(node.id);
-      if (result.downloaded) setNotice(`Baixado para Downloads: ${result.path}`);
+      if (result.downloaded) setNotice(t.downloadedNotice(result.path));
     } catch (err) {
-      setError(cleanError(err));
+      setError(describeError(err));
     }
   };
 
@@ -79,11 +84,11 @@ export function FileGrid() {
         <span className="grid-empty-icon">
           <IconCloud size={30} />
         </span>
-        <p className="grid-empty-title">Esta pasta está vazia</p>
+        <p className="grid-empty-title">{t.fileGrid.emptyTitle}</p>
         <p className="grid-empty-hint">
-          Arraste arquivos para cá ou use <strong>Enviar arquivos</strong> — o app escolhe a nuvem
-          com mais espaço livre. Arquivos colocados na pasta StorageWaiter das suas nuvens aparecem
-          aqui depois de reconciliar.
+          {t.fileGrid.emptyHintBefore}
+          <strong>{t.fileGrid.emptyHintBold}</strong>
+          {t.fileGrid.emptyHintAfter}
         </p>
       </div>
     );
@@ -92,10 +97,10 @@ export function FileGrid() {
   return (
     <div className="file-list" onMouseDown={(e) => e.target === e.currentTarget && setSelection([])}>
       <div className="file-list-header">
-        <span>Nome</span>
-        <span style={{ textAlign: 'right' }}>Tamanho</span>
-        <span>Conta</span>
-        <span>Status</span>
+        <span>{t.fileGrid.colName}</span>
+        <span style={{ textAlign: 'right' }}>{t.fileGrid.colSize}</span>
+        <span>{t.fileGrid.colAccount}</span>
+        <span>{t.fileGrid.colStatus}</span>
       </div>
       {nodes.map((node) => (
         <div

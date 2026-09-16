@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../store';
-import { cleanError, formatBytes } from '../util';
+import { formatBytes } from '../util';
+import { useT, useLang, type Lang } from '../i18n';
 import { AddGDriveModal, AddMegaModal } from './Modals';
 import { IconKey, IconLogo, IconPlus, IconRefresh, IconTrash } from './Icons';
 
@@ -10,10 +11,31 @@ function providerInitial(provider: string): string {
   return '?';
 }
 
+function LanguageSwitch() {
+  const lang = useLang();
+  const setLang = useStore((s) => s.setLang);
+  const options: Lang[] = ['pt', 'en'];
+  return (
+    <div className="lang-switch">
+      {options.map((l) => (
+        <button
+          key={l}
+          className={`lang-switch-btn ${lang === l ? 'active' : ''}`}
+          onClick={() => setLang(l)}
+        >
+          {l.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function Sidebar() {
+  const t = useT();
   const accounts = useStore((s) => s.accounts);
   const refreshAccounts = useStore((s) => s.refreshAccounts);
   const setError = useStore((s) => s.setError);
+  const describeError = useStore((s) => s.describeError);
   const [modal, setModal] = useState<'mega' | 'gdrive' | null>(null);
 
   const totals = accounts
@@ -32,7 +54,7 @@ export function Sidebar() {
       await fn();
       await refreshAccounts();
     } catch (err) {
-      setError(cleanError(err));
+      setError(describeError(err));
     }
   };
 
@@ -42,16 +64,13 @@ export function Sidebar() {
         <span className="brand-logo">
           <IconLogo size={17} />
         </span>
-        <span className="brand-name">StorageWaiter</span>
+        <span className="brand-name">{t.brand}</span>
+        <LanguageSwitch />
       </div>
 
       <div className="sidebar-section">
-        <h3 className="section-label">Contas</h3>
-        {accounts.length === 0 && (
-          <p className="sidebar-empty">
-            Conecte suas nuvens para somar o espaço livre delas em um único lugar.
-          </p>
-        )}
+        <h3 className="section-label">{t.sidebar.accountsLabel}</h3>
+        {accounts.length === 0 && <p className="sidebar-empty">{t.sidebar.emptyAccounts}</p>}
         {accounts.map((a) => {
           const pct =
             a.quotaTotal && a.quotaTotal > 0
@@ -73,7 +92,7 @@ export function Sidebar() {
                   className={`status-dot ${
                     a.status === 'active' ? 'ok' : a.status === 'auth_expired' ? 'warn' : 'danger'
                   }`}
-                  title={a.status === 'active' ? 'Conectada' : 'Precisa de atenção'}
+                  title={a.status === 'active' ? t.sidebar.connected : t.sidebar.needsAttention}
                 />
               </div>
               <div className="meter">
@@ -85,35 +104,31 @@ export function Sidebar() {
               <div className="account-foot">
                 <span className={`account-usage num ${needsAttention ? 'warn-text' : ''}`}>
                   {a.status === 'auth_expired'
-                    ? 'Reautorização necessária'
+                    ? t.sidebar.reauthRequired
                     : a.status !== 'active'
-                      ? 'Conta indisponível'
-                      : `${formatBytes(a.quotaUsed)} de ${formatBytes(a.quotaTotal)}`}
+                      ? t.sidebar.accountUnavailable
+                      : t.sidebar.usageOf(formatBytes(a.quotaUsed), formatBytes(a.quotaTotal))}
                 </span>
                 <span className="account-actions">
                   <button
                     className={`icon-btn ${needsAttention ? 'accent' : ''}`}
-                    title={
-                      a.provider === 'gdrive'
-                        ? 'Reautorizar acesso (abre o navegador)'
-                        : 'Reconectar'
-                    }
+                    title={a.provider === 'gdrive' ? t.sidebar.reauthorizeGDrive : t.sidebar.reconnect}
                     onClick={() => act(() => window.core.reconnectAccount(a.id))}
                   >
                     <IconKey size={13} />
                   </button>
                   <button
                     className="icon-btn"
-                    title="Reconciliar com a nuvem"
+                    title={t.sidebar.reconcile}
                     onClick={() => act(() => window.core.reconcileAccount(a.id))}
                   >
                     <IconRefresh size={13} />
                   </button>
                   <button
                     className="icon-btn"
-                    title="Remover conta"
+                    title={t.sidebar.removeAccount}
                     onClick={() => {
-                      if (confirm(`Remover a conta "${a.label}"?`)) {
+                      if (confirm(t.sidebar.removeAccountConfirm(a.label))) {
                         void act(() => window.core.removeAccount(a.id));
                       }
                     }}
@@ -128,22 +143,22 @@ export function Sidebar() {
         <div className="add-buttons">
           <button className="btn" onClick={() => setModal('mega')}>
             <IconPlus size={13} />
-            Mega
+            {t.sidebar.addMega}
           </button>
           <button className="btn" onClick={() => setModal('gdrive')}>
             <IconPlus size={13} />
-            Google Drive
+            {t.sidebar.addGDrive}
           </button>
         </div>
       </div>
 
       <div className="sidebar-footer">
-        <h3 className="section-label">Espaço total</h3>
+        <h3 className="section-label">{t.sidebar.totalSpaceLabel}</h3>
         <div className="meter tall">
           <div className="meter-fill" style={{ width: `${totalPct}%` }} />
         </div>
         <p className="usage-text num">
-          {formatBytes(totals.used)} usados de {formatBytes(totals.total)}
+          {t.sidebar.usedOfTotal(formatBytes(totals.used), formatBytes(totals.total))}
         </p>
       </div>
 

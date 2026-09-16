@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type DragEvent } from 'react';
 import type { JobInfo } from '@storagewaiter/core';
 import { useStore } from './store';
-import { cleanError } from './util';
+import { useT } from './i18n';
 import { Sidebar } from './components/Sidebar';
 import { FileGrid } from './components/FileGrid';
 import { TransferQueue } from './components/TransferQueue';
@@ -17,6 +17,7 @@ import {
 } from './components/Icons';
 
 export default function App() {
+  const t = useT();
   const path = useStore((s) => s.path);
   const selection = useStore((s) => s.selection);
   const nodes = useStore((s) => s.nodes);
@@ -24,6 +25,7 @@ export default function App() {
   const notice = useStore((s) => s.notice);
   const setError = useStore((s) => s.setError);
   const setNotice = useStore((s) => s.setNotice);
+  const describeError = useStore((s) => s.describeError);
   const jumpTo = useStore((s) => s.jumpTo);
   const refreshAccounts = useStore((s) => s.refreshAccounts);
   const refreshNodes = useStore((s) => s.refreshNodes);
@@ -64,10 +66,10 @@ export default function App() {
       try {
         await window.core.uploadFiles(useStore.getState().currentFolderId(), paths);
       } catch (err) {
-        setError(cleanError(err));
+        setError(describeError(err));
       }
     },
-    [setError],
+    [setError, describeError],
   );
 
   const pickAndUpload = async () => {
@@ -85,12 +87,11 @@ export default function App() {
   const deleteSelection = async () => {
     const names = nodes.filter((n) => selection.includes(n.id)).map((n) => n.name);
     if (names.length === 0) return;
-    const list = names.slice(0, 5).join(', ') + (names.length > 5 ? '…' : '');
-    if (!confirm(`Excluir ${names.length} item(ns)? (${list})\nIsso remove também da nuvem.`)) return;
+    if (!confirm(t.deleteConfirm(names))) return;
     try {
       await window.core.deleteNodes(selection);
     } catch (err) {
-      setError(cleanError(err));
+      setError(describeError(err));
     }
   };
 
@@ -100,11 +101,13 @@ export default function App() {
     if (!selectedNode || selectedNode.kind !== 'file') return;
     try {
       const saved = await window.core.saveNodeAs(selectedNode.id);
-      if (saved) setNotice(`Salvo em ${saved}`);
+      if (saved) setNotice(t.savedNotice(saved));
     } catch (err) {
-      setError(cleanError(err));
+      setError(describeError(err));
     }
   };
+
+  const currentFolderName = path.length === 1 ? t.home : path[path.length - 1]!.name;
 
   return (
     <div
@@ -134,7 +137,7 @@ export default function App() {
                   className={`crumb ${i === path.length - 1 ? 'crumb-current' : ''}`}
                   onClick={() => jumpTo(i)}
                 >
-                  {crumb.name}
+                  {i === 0 ? t.home : crumb.name}
                 </button>
               </span>
             ))}
@@ -143,28 +146,28 @@ export default function App() {
             {selectedNode?.kind === 'file' && selectedNode.status === 'ready' && (
               <button className="btn" onClick={() => void downloadSelected()}>
                 <IconDownload size={13} />
-                Baixar
+                {t.toolbar.download}
               </button>
             )}
             {selectedNode && (
               <button className="btn" onClick={() => setModal('rename')}>
                 <IconPencil size={13} />
-                Renomear
+                {t.toolbar.rename}
               </button>
             )}
             {selection.length > 0 && (
               <button className="btn btn-danger" onClick={() => void deleteSelection()}>
                 <IconTrash size={13} />
-                Excluir{selection.length > 1 ? ` (${selection.length})` : ''}
+                {selection.length > 1 ? t.toolbar.deleteCount(selection.length) : t.toolbar.delete}
               </button>
             )}
             <button className="btn" onClick={() => setModal('new-folder')}>
               <IconFolderPlus size={13} />
-              Nova pasta
+              {t.toolbar.newFolder}
             </button>
             <button className="btn btn-primary" onClick={() => void pickAndUpload()}>
               <IconUpload size={13} />
-              Enviar arquivos
+              {t.toolbar.uploadFiles}
             </button>
           </div>
         </div>
@@ -177,7 +180,7 @@ export default function App() {
         <div className="drop-overlay">
           <div className="drop-box">
             <IconUpload size={20} />
-            Solte para enviar para “{path[path.length - 1]!.name}”
+            {t.dropOverlay(currentFolderName)}
           </div>
         </div>
       )}
@@ -185,7 +188,7 @@ export default function App() {
       {error && (
         <div className="toast" onClick={() => setError(null)}>
           <span>{error}</span>
-          <button className="icon-btn" aria-label="Fechar">
+          <button className="icon-btn" aria-label={t.common.close}>
             <IconX size={13} />
           </button>
         </div>
@@ -193,7 +196,7 @@ export default function App() {
       {notice && !error && (
         <div className="toast toast-ok" onClick={() => setNotice(null)}>
           <span>{notice}</span>
-          <button className="icon-btn" aria-label="Fechar">
+          <button className="icon-btn" aria-label={t.common.close}>
             <IconX size={13} />
           </button>
         </div>
@@ -201,9 +204,9 @@ export default function App() {
 
       {modal === 'new-folder' && (
         <TextPromptModal
-          title="Nova pasta"
-          label="Nome da pasta"
-          submitLabel="Criar"
+          title={t.modals.newFolderTitle}
+          label={t.modals.folderNameLabel}
+          submitLabel={t.modals.create}
           onClose={() => setModal(null)}
           onSubmit={async (name) => {
             await window.core.createFolder(useStore.getState().currentFolderId(), name);
@@ -212,10 +215,10 @@ export default function App() {
       )}
       {modal === 'rename' && selectedNode && (
         <TextPromptModal
-          title={`Renomear “${selectedNode.name}”`}
-          label="Novo nome"
+          title={t.modals.renameTitle(selectedNode.name)}
+          label={t.modals.newNameLabel}
           initial={selectedNode.name}
-          submitLabel="Renomear"
+          submitLabel={t.toolbar.rename}
           onClose={() => setModal(null)}
           onSubmit={async (name) => {
             await window.core.renameNode(selectedNode.id, name);
