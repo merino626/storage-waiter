@@ -16,6 +16,10 @@
 
 **English** · [Português (BR)](README.pt-BR.md)
 
+### [⬇️ Download for Windows](https://github.com/merino626/storage-waiter/releases/download/v1.0.0/StorageWaiter.Setup.1.0.0.exe)
+
+<sub>Version 1.0.0 · Windows 10/11 (x64) · ~99 MB installer · [all releases](https://github.com/merino626/storage-waiter/releases/latest)</sub>
+
 </div>
 
 > This is a local, single-user desktop app — there is no backend, no telemetry, no account of mine in the loop. The screenshots and GIFs below are the real app, driven against my own real Mega and Google Drive accounts.
@@ -24,6 +28,7 @@
 
 ## Table of contents
 
+- [Download](#download)
 - [Screenshots](#screenshots)
 - [Why I built this](#why-i-built-this)
 - [What it actually does](#what-it-actually-does)
@@ -37,6 +42,23 @@
 - [Limitations (by design, for now)](#limitations-by-design-for-now)
 - [Roadmap](#roadmap)
 - [License](#license)
+
+---
+
+## Download
+
+| Platform | File | Download |
+|---|---|---|
+| **Windows 10/11 (x64)** | `StorageWaiter Setup 1.0.0.exe` — NSIS installer, ~99 MB | **[⬇️ Direct download](https://github.com/merino626/storage-waiter/releases/download/v1.0.0/StorageWaiter.Setup.1.0.0.exe)** |
+| macOS / Linux | Not packaged yet — credential encryption is DPAPI/Windows-only today (see [Roadmap](#roadmap)) | Build from source (see [Running it locally](#running-it-locally)) |
+
+Release notes: **[v1.0.0](https://github.com/merino626/storage-waiter/releases/tag/v1.0.0)** · every version: [releases page](https://github.com/merino626/storage-waiter/releases/latest)
+
+> The installer is unsigned (no paid code-signing certificate), so Windows SmartScreen may show a
+> _"Windows protected your PC"_ warning. Click **More info → Run anyway**, or build it from source
+> yourself with `npm run build:win -w @storagewaiter/app` so you know exactly what's in it.
+
+Installer options: choose the install directory, desktop shortcut and Start Menu shortcut.
 
 ---
 
@@ -275,6 +297,14 @@ npm run typecheck  # tsc --noEmit across core and app
 ```
 
 Requires **Node.js 22+** (the engine uses the built-in `node:sqlite` module — no native dependency to compile).
+
+### Production build (Windows installer)
+
+```bash
+npm run build:win -w @storagewaiter/app   # NSIS installer → packages/app/release/
+```
+
+The pipeline runs `electron-vite build` (main/preload/renderer) → `electron-builder --win`. The resulting installer is `packages/app/release/StorageWaiter Setup <version>.exe`.
 
 ### Connecting your own clouds
 

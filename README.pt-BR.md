@@ -16,6 +16,10 @@
 
 [English](README.md) · **Português (BR)**
 
+### [⬇️ Baixar para Windows](https://github.com/merino626/storage-waiter/releases/download/v1.0.0/StorageWaiter.Setup.1.0.0.exe)
+
+<sub>Versão 1.0.0 · Windows 10/11 (x64) · instalador de ~99 MB · [todas as versões](https://github.com/merino626/storage-waiter/releases/latest)</sub>
+
 </div>
 
 > Este é um app local, de usuário único — não existe backend, telemetria, ou qualquer conta minha no meio. Os screenshots e GIFs abaixo são do app de verdade, rodando contra minhas próprias contas reais de Mega e Google Drive.
@@ -24,6 +28,7 @@
 
 ## Sumário
 
+- [Download](#download)
 - [Screenshots](#screenshots)
 - [Por que eu construí isso](#por-que-eu-construí-isso)
 - [O que o app realmente faz](#o-que-o-app-realmente-faz)
@@ -37,6 +42,23 @@
 - [Limitações (por design, por enquanto)](#limitações-por-design-por-enquanto)
 - [Roadmap](#roadmap)
 - [Licença](#licença)
+
+---
+
+## Download
+
+| Plataforma | Arquivo | Download |
+|---|---|---|
+| **Windows 10/11 (x64)** | `StorageWaiter Setup 1.0.0.exe` — instalador NSIS, ~99 MB | **[⬇️ Download direto](https://github.com/merino626/storage-waiter/releases/download/v1.0.0/StorageWaiter.Setup.1.0.0.exe)** |
+| macOS / Linux | Ainda não empacotado — a criptografia de credenciais via DPAPI hoje é exclusiva do Windows (veja o [Roadmap](#roadmap)) | Compile a partir do código-fonte (veja [Rodando localmente](#rodando-localmente)) |
+
+Notas de versão: **[v1.0.0](https://github.com/merino626/storage-waiter/releases/tag/v1.0.0)** · todas as versões: [página de releases](https://github.com/merino626/storage-waiter/releases/latest)
+
+> O instalador não é assinado (sem certificado pago de code-signing), então o Windows SmartScreen pode
+> mostrar um aviso de _"O Windows protegeu seu PC"_. Clique em **Mais informações → Executar assim mesmo**,
+> ou compile você mesmo com `npm run build:win -w @storagewaiter/app` para saber exatamente o que tem dentro.
+
+Opções do instalador: escolher pasta de instalação, atalho na área de trabalho e no menu Iniciar.
 
 ---
 
@@ -274,6 +296,14 @@ npm test           # suíte do motor central, contra um provider fake em memóri
 npm run build      # bundle de produção em packages/app/out
 npm run typecheck  # tsc --noEmit no core e no app
 ```
+
+### Build de produção (instalador Windows)
+
+```bash
+npm run build:win -w @storagewaiter/app   # instalador NSIS → packages/app/release/
+```
+
+O pipeline roda `electron-vite build` (main/preload/renderer) → `electron-builder --win`. O instalador final fica em `packages/app/release/StorageWaiter Setup <versão>.exe`.
 
 Requer **Node.js 22+** (o motor usa o módulo nativo `node:sqlite` — sem dependência nativa para compilar).
 
