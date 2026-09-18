@@ -16,7 +16,7 @@
 
 **English** · [Português (BR)](README.pt-BR.md)
 
-### [⬇️ Download for Windows](https://github.com/merino626/storage-waiter/releases/download/v1.0.0/StorageWaiter.Setup.1.0.0.exe)
+### [⬇️ Download for Windows](https://github.com/merino626/storage-waiter/releases/download/1.0.0/StorageWaiter.Setup.1.0.0.exe)
 
 <sub>Version 1.0.0 · Windows 10/11 (x64) · ~99 MB installer · [all releases](https://github.com/merino626/storage-waiter/releases/latest)</sub>
 
@@ -49,10 +49,10 @@
 
 | Platform | File | Download |
 |---|---|---|
-| **Windows 10/11 (x64)** | `StorageWaiter Setup 1.0.0.exe` — NSIS installer, ~99 MB | **[⬇️ Direct download](https://github.com/merino626/storage-waiter/releases/download/v1.0.0/StorageWaiter.Setup.1.0.0.exe)** |
+| **Windows 10/11 (x64)** | `StorageWaiter Setup 1.0.0.exe` — NSIS installer, ~99 MB | **[⬇️ Direct download](https://github.com/merino626/storage-waiter/releases/download/1.0.0/StorageWaiter.Setup.1.0.0.exe)** |
 | macOS / Linux | Not packaged yet — credential encryption is DPAPI/Windows-only today (see [Roadmap](#roadmap)) | Build from source (see [Running it locally](#running-it-locally)) |
 
-Release notes: **[v1.0.0](https://github.com/merino626/storage-waiter/releases/tag/v1.0.0)** · every version: [releases page](https://github.com/merino626/storage-waiter/releases/latest)
+Release notes: **[v1.0.0](https://github.com/merino626/storage-waiter/releases/tag/1.0.0)** · every version: [releases page](https://github.com/merino626/storage-waiter/releases/latest)
 
 > The installer is unsigned (no paid code-signing certificate), so Windows SmartScreen may show a
 > _"Windows protected your PC"_ warning. Click **More info → Run anyway**, or build it from source
